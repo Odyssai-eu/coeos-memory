@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+dist/
+.DS_Store
+
+# A vault created inside the clone by mistake must never be committed.
+coeos-memory-vault/
+daily/
+knowledge/
+.coeos/

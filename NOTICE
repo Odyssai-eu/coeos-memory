@@ -1,0 +1,13 @@
+Coeos Memory
+Copyright 2026 OdyssAI (odyssai.eu)
+
+This product is licensed under the Apache License, Version 2.0.
+
+It is an independent implementation of the "LLM wiki" pattern described by
+Andrej Karpathy:
+https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f
+
+It can optionally send documents to a LightRAG instance
+(https://github.com/HKUDS/LightRAG), run alone or managed with Coeos-RAG
+(https://github.com/Odyssai-eu/Coeos-RAG). Both are separate projects under
+their own licenses and are not distributed here.

@@ -1,0 +1,105 @@
+{
+  "manifest_version": "0.3",
+  "name": "coeos-memory",
+  "display_name": "Coeos Memory",
+  "version": "0.4.0",
+  "description": "One long-term memory for Claude Chat, Cowork and Code: search a wiki compiled from your past sessions, read an article, add an entry.",
+  "long_description": "Gives Claude three tools on a folder of plain markdown on this machine, and holds the settings of the whole memory: the folder, an optional decision model and an optional LightRAG instance (alone or managed with Coeos-RAG). The Claude Code hooks installed by the coeos-memory package read the same settings. The server makes no network call unless a decision model is configured.",
+  "author": {
+    "name": "OdyssAI",
+    "url": "https://github.com/Odyssai-eu"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Odyssai-eu/coeos-memory"
+  },
+  "homepage": "https://github.com/Odyssai-eu/coeos-memory",
+  "documentation": "https://github.com/Odyssai-eu/coeos-memory/blob/main/docs/install.md",
+  "support": "https://github.com/Odyssai-eu/coeos-memory/issues",
+  "server": {
+    "type": "python",
+    "entry_point": "server/memory_server.py",
+    "mcp_config": {
+      "command": "/usr/bin/python3",
+      "args": [
+        "${__dirname}/server/memory_server.py"
+      ],
+      "env": {
+        "COEOS_MEMORY_DIR": "${user_config.memory_dir}",
+        "COEOS_DECISION_URL": "${user_config.decision_endpoint}",
+        "COEOS_DECISION_MODEL": "${user_config.decision_model}",
+        "COEOS_DECISION_API_KEY": "${user_config.decision_api_key}"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "memory_search",
+      "description": "Find the wiki articles that answer a question."
+    },
+    {
+      "name": "memory_read",
+      "description": "Return one wiki article in full."
+    },
+    {
+      "name": "memory_capture",
+      "description": "Add an entry to today's log of the memory."
+    }
+  ],
+  "user_config": {
+    "memory_dir": {
+      "type": "directory",
+      "title": "Memory folder",
+      "description": "The vault: the folder that holds daily/ and knowledge/. The same one you open in Obsidian.",
+      "required": true,
+      "default": "${HOME}/coeos-memory-vault"
+    },
+    "decision_endpoint": {
+      "type": "string",
+      "title": "Decision model: API address",
+      "description": "Optional. The address before /systemone, for example https://openrouter.ai/api/v1. Empty: no decision model, search uses keywords.",
+      "required": false
+    },
+    "decision_model": {
+      "type": "string",
+      "title": "Decision model: model name",
+      "description": "For example ~typesafe/jev-latest on OpenRouter. The tilde is part of that name.",
+      "required": false
+    },
+    "decision_api_key": {
+      "type": "string",
+      "title": "Decision model: API key",
+      "description": "Only if the server needs one. The Claude Code hooks cannot read this field: see docs/settings.md.",
+      "required": false,
+      "sensitive": true
+    },
+    "lightrag_url": {
+      "type": "string",
+      "title": "LightRAG: instance address",
+      "description": "Optional. Address and port of the LightRAG instance that receives the wiki, for example http://localhost:9621. With Coeos-RAG, give the instance's address, not the console's. Empty: nothing is sent.",
+      "required": false
+    },
+    "rag_sources": {
+      "type": "string",
+      "title": "LightRAG: files to send",
+      "description": "Optional. Comma-separated glob patterns. Empty: the wiki articles. {vault} stands for the memory folder.",
+      "required": false
+    }
+  },
+  "keywords": [
+    "memory",
+    "wiki",
+    "obsidian",
+    "knowledge-base"
+  ],
+  "license": "Apache-2.0",
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "linux"
+    ],
+    "runtimes": {
+      "python": ">=3.9"
+    }
+  }
+}
