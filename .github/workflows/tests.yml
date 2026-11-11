@@ -9,9 +9,17 @@ jobs:
   unit:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        python: ["3.9", "3.12"]
+        include:
+          # 3.9 is the oldest supported version and the system Python of macOS.
+          # It is not built for the newest Ubuntu image, hence the pinned one.
+          - os: ubuntu-24.04
+            python: "3.9"
+          - os: ubuntu-latest
+            python: "3.12"
+          - os: macos-latest
+            python: "3.12"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
