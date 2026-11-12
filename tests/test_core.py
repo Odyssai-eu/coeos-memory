@@ -34,11 +34,16 @@ class VaultCase(unittest.TestCase):
         vault.init()
 
     def write_transcript(self, turns):
+        entries = [{"type": role, "message": {"role": role, "content": [
+            {"type": "text", "text": text}, {"type": "tool_use", "name": "Bash"}]}}
+            for role, text in turns]
+        return self.write_entries(entries)
+
+    def write_entries(self, entries):
         path = Path(self.tmp.name) / "session.jsonl"
         with open(path, "w", encoding="utf-8") as handle:
-            for role, text in turns:
-                handle.write(json.dumps({"message": {"role": role, "content": [
-                    {"type": "text", "text": text}, {"type": "tool_use", "name": "Bash"}]}}) + "\n")
+            for entry in entries:
+                handle.write(json.dumps(entry) + "\n")
             handle.write("not json\n")
         return path
 
@@ -76,10 +81,65 @@ class TestVault(VaultCase):
         self.assertEqual(len(vault.articles()), 1, "the index is not an article")
 
 
+def user_entry(text, **fields):
+    """A human message, as Claude Code writes it, with extra top-level fields."""
+    return {"type": "user", "message": {"role": "user", "content": text}, **fields}
+
+
+def assistant_entry(text, **fields):
+    return {"type": "assistant", "message": {"role": "assistant", "content": [
+        {"type": "text", "text": text}, {"type": "tool_use", "name": "Bash"}]}, **fields}
+
+
 class TestTranscript(VaultCase):
+    def kept(self, *entries):
+        return transcript.turns(self.write_entries(list(entries)))
+
     def test_only_spoken_text_is_kept(self):
         path = self.write_transcript([("user", "hello"), ("assistant", "hi"), ("system", "x")])
         self.assertEqual(transcript.turns(path), [("user", "hello"), ("assistant", "hi")])
+
+    def test_api_request_blob_is_not_conversation(self):
+        blob = {"type": "api-request-blob", "message": {"role": "user",
+                "content": "<system-reminder>Plan mode is on.</system-reminder>"}}
+        self.assertEqual(self.kept(blob, user_entry("a real question")),
+                         [("user", "a real question")])
+
+    def test_meta_compact_and_sidechain_user_entries_are_dropped(self):
+        self.assertEqual(self.kept(
+            user_entry("Skill body text", isMeta=True),
+            user_entry("This session is being continued from an earlier one", isCompactSummary=True),
+            user_entry("delegated question", isSidechain=True),
+            user_entry("the human asks"),
+        ), [("user", "the human asks")])
+
+    def test_task_notification_is_dropped(self):
+        notice = user_entry("A background job has finished.", origin={"kind": "task-notification"})
+        self.assertEqual(self.kept(notice), [])
+
+    def test_leading_command_tag_is_dropped(self):
+        command = user_entry("<command-name>/clear</command-name>\n<command-message>clear</command-message>")
+        self.assertEqual(self.kept(command), [])
+
+    def test_assistant_api_error_and_synthetic_are_dropped(self):
+        synthetic = assistant_entry("No response requested.")
+        synthetic["message"]["model"] = "<synthetic>"
+        self.assertEqual(self.kept(
+            assistant_entry("Request failed.", isApiErrorMessage=True),
+            synthetic,
+            assistant_entry("A real answer."),
+        ), [("assistant", "A real answer.")])
+
+    def test_system_reminder_is_stripped_from_a_human_message(self):
+        message = user_entry("Please check the router.\n<system-reminder>Plan mode is on.</system-reminder>\nThanks.")
+        self.assertEqual(self.kept(message), [("user", "Please check the router.\n\nThanks.")])
+
+    def test_human_origin_is_kept(self):
+        self.assertEqual(self.kept(user_entry("typed by a person", origin={"kind": "human"})),
+                         [("user", "typed by a person")])
+
+    def test_entry_without_origin_is_kept(self):
+        self.assertEqual(self.kept(user_entry("older transcript")), [("user", "older transcript")])
 
     def test_chunks_keep_every_turn_in_order(self):
         spoken = [("user", "x" * 900)] * 10

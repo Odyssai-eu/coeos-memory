@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "coeos-memory",
   "display_name": "Coeos Memory",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "One long-term memory for Claude Chat, Cowork and Code: search a wiki compiled from your past sessions, read an article, add an entry.",
   "long_description": "Gives Claude three tools on a folder of plain markdown on this machine, and holds the settings of the whole memory: the folder, an optional decision model and an optional LightRAG instance (alone or managed with Coeos-RAG). The Claude Code hooks installed by the coeos-memory package read the same settings. The server makes no network call unless a decision model is configured.",
   "author": {
